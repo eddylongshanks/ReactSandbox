@@ -615,3 +615,48 @@ Notes on setting State:
 
 ## Mounting and Unmounting
 
+When mounting and unmounting components (as above), be aware that their state is lost when unmounting.
+
+## Function Wrappers and the callback hook
+
+### Function Wrapper
+
+When sending a function down into child components, it gives that component power to send back whatever it wants, not just a "House" component. To avoid this, a wrapper can be created that is passed instead, this would take responsibility of asserting that a valid object is being passed back up to the parent:
+
+```js
+const setSelectedHouseWrapper = (house) => {
+    //do checks to determine whether the object is valid
+    setSelectedHouse(house);
+}
+
+...
+
+<>
+    {selectedHouse ? (
+        <House house={selectedHouse} />
+    ) : (
+        <HouseList selectHouse={setSelectedHouseWrapper} /> //Send wrapper instead
+    )}
+</>
+```
+
+Caveats:
+- The function object is recreated and a new reference is used (think, a new singleton)
+- Watch out for this when using memoised components
+
+### Callbacks
+
+If you need to preserve the same function reference between renders than a callback can be used, this memoises the contained function, and can be included inside the wrapper:
+
+```js
+const setHouseWrapper =
+    useCallback((house) => {
+        setSelectedHouse(house);
+    },[]);
+```
+
+## Delegating State to a Custom Hook
+
+Custom hooks 
+
+- Should always have the "use" prefix in their name
