@@ -455,3 +455,163 @@ setCounter(current => counter + 1);
 - Change the value using the 'set' function only
 
 
+
+# Conditional Rendering and Shared State
+
+## Conditional Rendering
+
+Variables can be used to confitionally render html:
+
+```js
+const HouseRow = ({ house }) => {
+    let priceTd;
+    if (house.price < 500000)
+        priceTd = <td>{house.price}</td>
+    else
+        priceTd = <td className="text-primary">{house.price}</td>
+    return (
+        <tr>
+            <td>{house.address}</td>
+            <td>{house.country}</td>
+            {priceTd}
+        </tr>
+    );
+};
+```
+
+The above can be shortened to an expression with a template literal:
+
+```js
+const HouseRow = ({ house }) => {    
+    return (
+        <tr>
+            <td>{house.address}</td>
+            <td>{house.country}</td>
+            <td className={`${house.price >= 500000 ? "text-primary" : ""}`}>
+                {house.price}
+            </td>
+        </tr>
+    );
+};
+```
+
+This can be modified further to only render the price if the value is "truthy", meaning is isnt null or zero, roughly c# equivalent of a null coalesce. This works because javascript will check the first part of the operator and if false, won't look at the second part:
+
+```js
+const HouseRow = ({ house }) => {    
+    return (
+        <tr>
+            <td>{house.address}</td>
+            <td>{house.country}</td>
+            {house.price && (
+                <td className={`${house.price >= 500000 ? "text-primary" : ""}`}>
+                    {house.price}
+                </td>
+            )}
+        </tr>
+    );
+};
+```
+
+A similar exaple is below that determines whether an image is defined before attempting to render in ```<img>``` element:
+
+```js
+import defaultPhoto from "../helpers/defaultPhoto";
+
+<img src={house.photo ? `./houseImages/${house.photo}.jpg` : defaultPhoto} alt="House pic" />
+...
+```
+
+## Conditionally Rendering Components
+
+Using ```useState()```
+
+```js
+const App () => {
+    const [selectedHouse, setSelectedHouse] = useState();
+    return (
+        <>
+            <Banner>
+                <div>Providing houses all over the world</div>
+            </Banner>
+            {selectedHouse ? <House house={selectedHouse} /> : <HouseList />}
+        </>
+    );
+};
+```
+
+- ```selectedHouse``` will initially be undefined because no value has been passed to ```useState```
+- Right now, the state will never change because ```setSelectedHouse``` is never called
+
+## Passing in functions as Props and Determining State Location
+
+Given the above code:
+Problem: The ```App``` can't know when a ```House``` is selected as that component is multiple rows down in the code. Capturing that event is not an option, instead this can be passed down through HouseList as a property so that it can set the state for App:
+
+```js
+
+{selectedHouse ? <House house={selectedHouse} /> : 
+    <HouseList selectHouse={setSelectedHouse} />}
+
+```
+
+Note: The code above will not work, when moving on to a new line with a conditional statement, it must be wrapped in ():
+
+```js
+<>
+    {selectedHouse ? (
+        <House house={selectedHouse} />
+    ) : (
+        <HouseList selectHouse={setSelectedHouse} />
+    )}
+</>
+```
+
+In order for HouseList to then use this property, it must be destructured:
+
+this:
+
+```js
+const HouseList = () => {
+    ...
+}
+```
+
+becomes this:
+
+```js
+const HouseList = ({ selectHouse }) => {
+    ...
+}
+```
+
+We won't use this in HouseList itself, it will pass down through HouseRow:
+
+```js
+<HouseRow key={h.id} house={h} selectHouse={selectHouse} />
+```
+
+Note that the property being passed in this instance is ```selectHouse```, the property that was received by ```HouseList```, it is being passed deeper as the same name: ```selectHouse```
+
+Then the HouseRow will destructure the property:
+
+```js
+const HouseRow = ({ house, selectHouse }) => {
+    return (
+        <tr onClick={() => selectHouse(house)}>
+        ...
+    )
+}
+```
+
+Summing up:
+Setting the state of whether a House or HouseList was shown was set at the top level of App; this was passed as a prop to HouseList, and then passed again down to HouseRow. This allowed HouseRow to change the state at the App level, since this function that is passed is a reference to the parent function, not a copy.
+
+Notes on setting State:
+- Passing functions as properties creates a reference, not a copy
+- In this case the function changes state of the whole application, generally its best practice ot to do this unless needed
+- Be mindful of WHERE you NEED to change the state, start at the bottom (HouseRow), if its parent needs to have its state changed, then introduce the set function there and pass it down to its child HouseRow, and so on.
+  - Essentially, place the state as low as you can
+
+## Mounting and Unmounting
+
