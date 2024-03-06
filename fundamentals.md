@@ -29,13 +29,13 @@ const Greeting = () => (
 );
 ```
 
-div and h2 are technically also components, but theyre built in and the reactdom recognises it and renders the appropriate html tag
+div and h2 are technically also components, but theyre built in and the reactdom recognises it and renders the appropriate html tag.
 
-built in components are camelCase, user created components are PascalCase
+Built in components are camelCase, user created components are PascalCase
 
-it is recommended to use function components instead of class components
+It is recommended to use function components instead of class components
 
-App is generally the "parent" component. Everything is built with components and sub-components. 
+"App" is generally the "parent" component. Everything is built with components and sub-components. 
 
 ## Modules
 
@@ -62,12 +62,12 @@ You can export a default function from a file by specifying `export default doSo
 
 ### Why use modules?
 
-- They bring strucuture
+- They bring structure
 - Allows reusability
 - Encapsulation - anything not exported remains private
 - Needed for bundling, the tool creates one big file
 
-Its good practice to have one public function per file. The function can only have one parent element, `<header>` in this case.
+Its good practice to have one public function per file. The function can only have one parent element, `<header>` in this case:
 
 ```js
 const Banner = () => {
@@ -97,9 +97,9 @@ export default App;
 
 ## Props
 
--Passing arguments to components
--the receiving component can access the props object
--Allows for reusability
+- Passing arguments to components
+- the receiving component can access the props object
+- Allows for reusability
 
 Parameters can be added into a function call
 
@@ -256,7 +256,7 @@ import HouseList from "./houselist";
 const App = () => {
     return (
         <>
-            <HouseList/>
+            <HouseList />
         </>
     );
 };
@@ -281,14 +281,25 @@ const HouseRow = ({house}) => {
 The `HouseList` function would then be changed to reflect the following:
 
 ```javascript
-...
-    <tbody>
-        {houses.map(h => <HouseRow key={h.id} house={h} />)}
-    </tbody>
-...
+const HouseList = () => {
+    return (
+        <>
+            <table>
+                <thead>
+                    <th>Address</th>
+                    <th>Country</th>
+                    <th>Price</th>
+                </thead>
+                <tbody>
+                    {houses.map(h => <HouseRow key={h.id} house={h} />)}
+                </tbody>
+            </table>
+        </>
+    );
+};
 ```
 
-Instead of having to access house property directly, it can be destructured:
+Instead of having to access house property "```h```" directly, it can be destructured:
 
 ```javascript
 const HouseRow = ({ house: {address, country, price} }) => {
@@ -318,7 +329,7 @@ Which are passed through as:
 ...
 ```
 
-This can become a long list, so instead, you can use a "spread" property, which will unpack all the properties and pass them in as individuals:
+This can become a long list, so instead, you can use a "spread" property (the three dots), which will unpack all the properties and pass them in as individuals:
 
 ```javascript
 ...
@@ -401,6 +412,7 @@ const HouseList = () => {
     
     const addHouse = () => {
         // Don't change 'houses' directly here, treat it like a private field, accessed only via the setHouses function
+        // c# comparison: _houses is the private field, Houses would be the public property that sets _houses, as in { get; set; }
         setHouses([
             // This adds the existing array to the new array
             ...houses,
@@ -549,13 +561,11 @@ Given the above code:
 Problem: The ```App``` can't know when a ```House``` is selected as that component is multiple rows down in the code. Capturing that event is not an option, instead this can be passed down through HouseList as a property so that it can set the state for App:
 
 ```js
-
 {selectedHouse ? <House house={selectedHouse} /> : 
     <HouseList selectHouse={setSelectedHouse} />}
-
 ```
 
-Note: The code above will not work, when moving on to a new line with a conditional statement, it must be wrapped in ():
+Note: The code above will not work as is; when moving on to a new line with a conditional statement, it must be wrapped in ():
 
 ```js
 <>
@@ -588,7 +598,9 @@ const HouseList = ({ selectHouse }) => {
 We won't use this in HouseList itself, it will pass down through HouseRow:
 
 ```js
-<HouseRow key={h.id} house={h} selectHouse={selectHouse} />
+<>
+    <HouseRow key={h.id} house={h} selectHouse={selectHouse} />
+</>
 ```
 
 Note that the property being passed in this instance is ```selectHouse```, the property that was received by ```HouseList```, it is being passed deeper as the same name: ```selectHouse```
@@ -598,19 +610,27 @@ Then the HouseRow will destructure the property:
 ```js
 const HouseRow = ({ house, selectHouse }) => {
     return (
-        <tr onClick={() => selectHouse(house)}>
-        ...
-    )
-}
+        // here
+        <tr onClick={() => selectHouse(house)}>    
+            <td>{house.address}</td>
+            <td>{house.country}</td>
+            {house.price && (
+                <td className={`${house.price >= 500000 ? "text-primary" : ""}`}>
+                    {house.price}
+                </td>
+            )}
+        </tr>
+    );
+};
 ```
 
 Summing up:
-Setting the state of whether a House or HouseList was shown was set at the top level of App; this was passed as a prop to HouseList, and then passed again down to HouseRow. This allowed HouseRow to change the state at the App level, since this function that is passed is a reference to the parent function, not a copy.
+Setting the state of whether a ```House``` or ```HouseList``` was shown was set at the top level of ```App```; this was passed as a prop to ```HouseList```, and then passed again down to ```HouseRow```. This allowed ```HouseRow``` to change the state at the App level, since this function that is passed is a _reference_ to the parent function, not a copy.
 
 Notes on setting State:
 - Passing functions as properties creates a reference, not a copy
-- In this case the function changes state of the whole application, generally its best practice ot to do this unless needed
-- Be mindful of WHERE you NEED to change the state, start at the bottom (HouseRow), if its parent needs to have its state changed, then introduce the set function there and pass it down to its child HouseRow, and so on.
+- In this case the function changes state of the whole application, generally its best practice not to do this unless needed
+- Be mindful of WHERE you NEED to change the state, start at the bottom (```HouseRow```), if its parent needs to have its state changed, then introduce the set function there and pass it down to its child ```HouseRow```, and so on.
   - Essentially, place the state as low as you can
 
 ## Mounting and Unmounting
@@ -621,7 +641,7 @@ When mounting and unmounting components (as above), be aware that their state is
 
 ### Function Wrapper
 
-When sending a function down into child components, it gives that component power to send back whatever it wants, not just a "House" component. To avoid this, a wrapper can be created that is passed instead, this would take responsibility of asserting that a valid object is being passed back up to the parent:
+When sending a function down into child components, it gives that component power to send back whatever it wants, not just a ```House``` component. To avoid this, a wrapper can be created that is passed instead, this would take responsibility of asserting that a valid object is being passed back up to the parent:
 
 ```js
 const setSelectedHouseWrapper = (house) => {
@@ -660,3 +680,52 @@ const setHouseWrapper =
 Custom hooks 
 
 - Should always have the "use" prefix in their name
+- a Hook is a component, like a module, that is exported by a module; however a hooke doesn't return jsx
+
+
+
+## Adding Additional State to a Custom Hook - (Implementing a Loading Indicator)
+
+A new file can be added that essentially returns some data:
+
+```js
+const loadingStatus = {
+    loaded: "Loaded",
+    isLoading: "Loading...",
+    hasErrored: "An error has occured while loading",
+};
+
+export default loadingStatus;
+```
+
+Another file to take this data and render it into some html ```h3```:
+
+```js
+const LoadingIndicator = ({ loadingState }) => {
+    return <h3>{loadingStatus}</h3>;
+};
+
+export default LoadingIndicator;
+```
+
+this useHouses code:
+
+```js
+const useHouses = () => {
+    const [houses, setHouses] = useState([]);
+
+    useEffect(() => {
+        const fetchHouses = asyn () => {
+            const response = await fetch("/api/houses");
+            const houses = await response.json();
+            setHouses(house);            
+        };
+        fetchHouses();        
+    }, []);
+
+    return houses;
+};
+
+export default useHouses;
+```
+
