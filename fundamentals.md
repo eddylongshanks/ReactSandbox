@@ -679,10 +679,72 @@ const setHouseWrapper =
 
 Custom hooks 
 
+- a Hook is a component, like a module, that is exported by a module; however a hook doesn't return jsx
+- When the returned state changes, the component that uses the hook, re-renders
+- Separation of concerns... to help avoid huge functions, and resusable
 - Should always have the "use" prefix in their name
-- a Hook is a component, like a module, that is exported by a module; however a hooke doesn't return jsx
 
+this useHouses.js code:
 
+```js
+const useHouses = () => {
+    const [houses, setHouses] = useState([]);
+
+    useEffect(() => {
+        const fetchHouses = async () => {
+            const response = await fetch("/api/houses");
+            const houses = await response.json();
+            setHouses(house);            
+        };
+        fetchHouses();        
+    }, []);
+
+    return { houses, setHouses };
+};
+
+export default useHouses;
+```
+
+Then in the HouseList you can add the hook to the top:
+
+```javascript
+const HouseList = ({ selectHouse }) => {
+    const { houses, setHouses } = useHouses();
+
+    const addHouse = () => {
+        // this setter now is returned from the custom hook component above
+        setHouses([
+            ...houses,
+            {
+                id: 3,
+                address: "16 house lane, houseville",
+                country: "UK",
+                price: 190000
+            },
+        ]);
+    };
+
+    return (
+        <>
+            <table>
+                <thead>
+                    <th>Address</th>
+                    <th>Country</th>
+                    <th>Price</th>
+                </thead>
+                <tbody>
+                    {houses.map((h) => (
+                        <HouseRow key={h.id} house={h} selectHoluse={selectHouse} />
+                    ))}
+                </tbody>
+            </table>
+            <button onClick={addHouse}>
+                Add
+            </button>
+        </>
+    );
+};
+```
 
 ## Adding Additional State to a Custom Hook - (Implementing a Loading Indicator)
 
@@ -708,24 +770,78 @@ const LoadingIndicator = ({ loadingState }) => {
 export default LoadingIndicator;
 ```
 
-this useHouses code:
+The hook created in the previous section is edited to add the loadingState hook:
 
 ```js
 const useHouses = () => {
     const [houses, setHouses] = useState([]);
+    const [loadingState, setLoadingState] = useState(loadingStatus.isLoading);
 
     useEffect(() => {
-        const fetchHouses = asyn () => {
-            const response = await fetch("/api/houses");
-            const houses = await response.json();
-            setHouses(house);            
+        // Change the loadingState at key points throughout:
+        const fetchHouses = async () => {
+            setLoadingState(loadingStatus.isLoading);
+            try {
+                const response = await fetch("/api/houses");
+                const houses = await response.json();
+                setHouses(house);
+                setLoadingState(loadingStatus.loaded);
+            } catch {
+                setLoadingState(loadingStatus.hasErrored);
+            }
         };
         fetchHouses();        
     }, []);
 
-    return houses;
+    return { houses, setHouses, loadingState };
 };
 
 export default useHouses;
 ```
+
+Then HouseList can be altered to check the state of the loading state:
+
+```javascript
+const HouseList = ({ selectHouse }) => {
+    // The hook must be placed above any conditions
+    // Hooks can not be called conditionally
+    const { houses, setHouses, loadingState  } = useHouses();
+
+    if (loadingState !== loadingState.loaded)
+        return <LoadingIndicator loadingState={loadingState} />
+
+    const addHouse = () => {
+        setHouses([
+            ...houses,
+            {
+                id: 3,
+                address: "16 house lane, houseville",
+                country: "UK",
+                price: 190000
+            },
+        ]);
+    };
+
+    return (
+        <>
+            <table>
+                <thead>
+                    <th>Address</th>
+                    <th>Country</th>
+                    <th>Price</th>
+                </thead>
+                <tbody>
+                    {houses.map((h) => (
+                        <HouseRow key={h.id} house={h} selectHoluse={selectHouse} />
+                    ))}
+                </tbody>
+            </table>
+            <button onClick={addHouse}>
+                Add
+            </button>
+        </>
+    );
+};
+```
+
 
